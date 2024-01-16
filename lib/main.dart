@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_paper/screens/home.dart';
 import 'package:new_paper/screens/welcome.dart';
 import 'package:new_paper/widgets/app_colors.dart';
 
@@ -13,7 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'flutterNewPaper',
+      title: 'flutterNewsPaper',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -25,6 +26,10 @@ class MyApp extends StatelessWidget {
             elevation: 0.0,
           )),
       home: const WelcomeScreen(),
+      routes: {
+        '/welcome': (context) => const WelcomeScreen(),
+        '/home': (context) => const HomeScreen(),
+      },
     );
   }
 }

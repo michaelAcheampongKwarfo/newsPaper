@@ -8,14 +8,17 @@ class AppText extends StatelessWidget {
   final Color? color;
   final TextAlign? textAlign;
   final TextOverflow? textOverflow;
-  const AppText(
-      {super.key,
-      required this.text,
-      this.fontSize,
-      this.fontWeight,
-      this.color,
-      this.textAlign,
-      this.textOverflow});
+  final int? maxlines;
+  const AppText({
+    super.key,
+    required this.text,
+    this.fontSize,
+    this.fontWeight,
+    this.color,
+    this.textAlign,
+    this.textOverflow,
+    this.maxlines,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +32,7 @@ class AppText extends StatelessWidget {
       ),
       textAlign: textAlign,
       overflow: textOverflow,
+      maxLines: maxlines,
     );
   }
 }

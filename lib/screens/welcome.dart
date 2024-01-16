@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:new_paper/screens/home.dart';
 import 'package:new_paper/widgets/app_button.dart';
 import 'package:new_paper/widgets/app_colors.dart';
 import 'package:new_paper/widgets/app_text.dart';
@@ -12,22 +11,17 @@ class WelcomeScreen extends StatelessWidget {
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(10),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              height: screenSize.height * 0.03,
-            ),
             ClipRRect(
-              borderRadius: BorderRadius.circular(12.0),
-              child: Container(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(12.0),
+                bottomRight: Radius.circular(12.0),
+              ),
+              child: SizedBox(
                 width: screenSize.width,
-                height: screenSize.height * 0.55,
-                decoration: BoxDecoration(
-                  border: Border.all(width: 0.5, color: AppColors.primaryColor),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
+                height: screenSize.height * 0.6,
                 child: Image.asset(
                   'lib/images/img1.jpg',
                   filterQuality: FilterQuality.high,
@@ -36,7 +30,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ),
             SizedBox(
-              height: screenSize.height * 0.05,
+              height: screenSize.height * 0.03,
             ),
             const AppText(
               text: 'News from around the\nworld for you',
@@ -59,11 +53,7 @@ class WelcomeScreen extends StatelessWidget {
             ),
             AppButton(
               onTap: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const HomeScreen(),
-                  ),
-                );
+                Navigator.pushReplacementNamed(context, '/home');
               },
               text: 'Get Started',
             ),

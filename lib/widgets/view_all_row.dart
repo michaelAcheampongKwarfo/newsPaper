@@ -12,7 +12,7 @@ class ViewAllRow extends StatelessWidget {
     final screenSize = MediaQuery.of(context).size;
     return Padding(
       padding: EdgeInsets.symmetric(
-        vertical: screenSize.height * 0.03,
+        vertical: screenSize.height * 0.02,
         horizontal: screenSize.width * 0.01,
       ),
       child: Row(

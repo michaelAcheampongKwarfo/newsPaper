@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:new_paper/screens/breaking.dart';
+import 'package:new_paper/screens/category.dart';
+import 'package:new_paper/screens/web_view.dart';
+import 'package:new_paper/screens/trending.dart';
+import 'package:new_paper/services/article_model.dart';
+import 'package:new_paper/services/http_manager.dart';
 import 'package:new_paper/widgets/app_colors.dart';
 import 'package:new_paper/widgets/app_text.dart';
 import 'package:new_paper/widgets/breaking_card.dart';
@@ -16,17 +22,43 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  ValueNotifier<int> activeIndexNotifier = ValueNotifier<int>(0);
+  final HttpManager _httpManager = HttpManager();
+  List<ArticleModel> breakingNewsList = [];
+  List<ArticleModel> trendingNewsList = [];
+
+  Future<void> getDataFromHttpManager() async {
+    await Future.wait([
+      _httpManager
+          .fetchBreakingNews()
+          .then((value) => breakingNewsList = value),
+      _httpManager
+          .fetchTrendingNews()
+          .then((value) => trendingNewsList = value),
+    ]);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getDataFromHttpManager();
+  }
+
+  final Map categoryMap = {
+    'Business': 'lib/images/business.png',
+    'Entertainment': 'lib/images/entertainment.png',
+    'Health': 'lib/images/health.png',
+    'Technology': 'lib/images/technology.png',
+    'Sport': 'lib/images/sports.png',
+    'Politics': 'lib/images/politics.png',
+    'Science': 'lib/images/science.png',
+    // 'Education': 'lib/images/education.png',
+    // 'Environment': 'lib/images/environment.png'
+  };
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    int activeIndex = 0;
-    final Map categoryMap = {
-      'Business': 'lib/images/business.png',
-      'Entertainment': 'lib/images/entertainment.png',
-      'General': 'lib/images/general.png',
-      'Health': 'lib/images/health.png',
-      'Sport': 'lib/images/sports.png'
-    };
+
     return Scaffold(
       appBar: AppBar(
         title: const Row(
@@ -46,88 +78,162 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.02),
-        child: Column(
-          children: [
-            SizedBox(
-              width: screenSize.width,
-              height: screenSize.height * 0.1,
-              child: ListView.builder(
-                shrinkWrap: true,
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: categoryMap.length,
-                itemBuilder: (context, index) {
-                  return CategoryCard(
-                      text: categoryMap.keys.elementAt(index),
-                      imagePath: categoryMap.values.elementAt(index));
-                },
+      body: FutureBuilder(
+        future: getDataFromHttpManager(),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return AppText(text: 'Error: ${snapshot.error}');
+          } else {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding:
+                  EdgeInsets.symmetric(horizontal: screenSize.width * 0.02),
+              child: Column(
+                children: [
+                  // Category Section
+                  SizedBox(
+                    width: screenSize.width,
+                    height: screenSize.height * 0.1,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: categoryMap.length,
+                      itemBuilder: (context, index) {
+                        return CategoryCard(
+                          text: categoryMap.keys.elementAt(index),
+                          imagePath: categoryMap.values.elementAt(index),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CategoryScreen(
+                                  title: '${categoryMap.keys.elementAt(index)}',
+                                  category: categoryMap.keys
+                                      .elementAt(index)
+                                      .toString()
+                                      .toLowerCase(),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  // Breaking New - view all
+                  ViewAllRow(
+                      text: 'Breaking News',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const BreakingScreen(title: 'Breaking News'),
+                          ),
+                        );
+                      }),
+                  // CarouselSlider
+                  SizedBox(
+                    width: screenSize.width,
+                    height: screenSize.height * 0.3,
+                    child: CarouselSlider.builder(
+                      itemCount: 3,
+                      itemBuilder: (BuildContext context, int itemIndex,
+                          int pageViewIndex) {
+                        return BreakingCard(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WebView(
+                                  url: trendingNewsList[itemIndex].url,
+                                ),
+                              ),
+                            );
+                          },
+                          imagePath: breakingNewsList[itemIndex].urlToImage,
+                          text: breakingNewsList[itemIndex].title,
+                        );
+                      },
+                      options: CarouselOptions(
+                          height: double.infinity,
+                          autoPlay: true,
+                          enlargeCenterPage: true,
+                          enlargeStrategy: CenterPageEnlargeStrategy.height,
+                          onPageChanged: (index, reason) {
+                            activeIndexNotifier.value = index;
+                          }),
+                    ),
+                  ),
+                  SizedBox(
+                    height: screenSize.height * 0.01,
+                  ),
+                  ValueListenableBuilder<int>(
+                    valueListenable: activeIndexNotifier,
+                    builder: (context, value, child) {
+                      return AnimatedSmoothIndicator(
+                        activeIndex: value,
+                        count: 3,
+                        effect: const SwapEffect(
+                          dotHeight: 15.0,
+                          dotWidth: 15.0,
+                          activeDotColor: AppColors.primaryColor,
+                          dotColor: AppColors.greyColor,
+                        ),
+                      );
+                    },
+                  ),
+                  // Trending News - view all
+                  ViewAllRow(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const TrendingScreen(title: 'Trending News'),
+                          ),
+                        );
+                      },
+                      text: 'Trending News'),
+                  // Trending tile
+                  SizedBox(
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      itemCount: 3,
+                      itemBuilder: (context, index) {
+                        return TrendingCard(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WebView(
+                                  url: trendingNewsList[index].url,
+                                ),
+                              ),
+                            );
+                          },
+                          imagePath: trendingNewsList[index].urlToImage,
+                          title: trendingNewsList[index].title,
+                          subTitle: trendingNewsList[index].description,
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    height: screenSize.height * 0.05,
+                  ),
+                ],
               ),
-            ),
-            // view all
-            ViewAllRow(text: 'Breaking News', onTap: () {}),
-            // carouselSilder
-            SizedBox(
-              width: screenSize.width,
-              height: screenSize.height * 0.3,
-              child: CarouselSlider.builder(
-                itemCount: categoryMap.length,
-                itemBuilder:
-                    (BuildContext context, int itemIndex, int pageViewIndex) {
-                  return BreakingCard(
-                    imagePath: categoryMap.values.elementAt(itemIndex),
-                    text: categoryMap.keys.elementAt(itemIndex),
-                  );
-                },
-                options: CarouselOptions(
-                    height: double.infinity,
-                    autoPlay: true,
-                    enlargeCenterPage: true,
-                    enlargeStrategy: CenterPageEnlargeStrategy.height,
-                    onPageChanged: (index, reason) {
-                      setState(() {
-                        activeIndex = index;
-                      });
-                    }),
-              ),
-            ),
-            SizedBox(
-              height: screenSize.height * 0.01,
-            ),
-            AnimatedSmoothIndicator(
-              activeIndex: activeIndex,
-              count: categoryMap.length,
-              effect: const SwapEffect(
-                dotHeight: 15.0,
-                dotWidth: 15.0,
-                activeDotColor: AppColors.primaryColor,
-                dotColor: AppColors.greyColor,
-              ),
-            ),
-            // view all
-            ViewAllRow(onTap: () {}, text: 'Treanding News'),
-            // Trending tile
-            SizedBox(
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                scrollDirection: Axis.vertical,
-                shrinkWrap: true,
-                itemCount: categoryMap.length,
-                itemBuilder: (context, index) {
-                  return TrendingCard(
-                      imagePath: categoryMap.values.elementAt(index),
-                      title: categoryMap.keys.elementAt(index),
-                      subTitle: categoryMap.keys.elementAt(index));
-                },
-              ),
-            ),
-            SizedBox(
-              height: screenSize.height * 0.05,
-            ),
-          ],
-        ),
+            );
+          }
+        },
       ),
     );
   }
